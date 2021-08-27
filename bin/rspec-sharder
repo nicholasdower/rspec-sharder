@@ -12,7 +12,6 @@ end
 
 @total_shards = 1
 @shard_num = 1
-@record = false
 
 @parser = OptionParser.new do |opts|
   opts.banner = <<~EOF
@@ -20,14 +19,15 @@ end
     specified shard.
 
     Shard size is determined by summing the recorded durations for each spec file in the
-    shard. Durations are recorded in .spec_durations.txt. If a spec file is not found in
+    shard. Durations are found in .spec_durations.txt. If a spec file is not found in
     .spec_durations.txt, the duration is estimated based on the number of examples in the
     spec file.
 
-    .spec_durations.txt should be generated before first use and updated any time shards
-    become uneven. You can do this with the following command:
+    .spec_durations.txt is generate/updated on each run, but only for the shard which was
+    actually executed. To generate durations for all shards simultaneously, run this
+    with the default options (1 shard total):
 
-      bundle exec rspec-sharder --record -- [<rspec-args...>]
+    bundle exec rspec-sharder -- [<rspec-args...>]
 
     Usage: bundle exec rspec-sharder [--total-shards <num> [--shard-num <num>]] -- [<rspec-args...>]
 
@@ -54,10 +54,6 @@ end
       fail('fatal: invalid value for --shard-num')
     end
   end
-
-  opts.on('-r', '--record', 'Optional. Generate .spec_durations.txt.') do
-    @record = true
-  end
 end
 
 begin
@@ -70,4 +66,4 @@ fail('fatal: invalid value for --total-shards') unless @total_shards > 0
 fail('fatal: invalid value for --shard-num') unless @shard_num > 0
 fail('fatal: --shard-num may not be greater than --total-shards') unless @shard_num <= @total_shards
 
-RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard_num, record: @record, rspec_args: ARGV)
+RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard_num, rspec_args: ARGV)
