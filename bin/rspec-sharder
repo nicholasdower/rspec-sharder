@@ -10,12 +10,26 @@ def fail(message)
   exit 1
 end
 
+@total_shards = 1
+@shard_num = 1
+@record = false
+
 @parser = OptionParser.new do |opts|
   opts.banner = <<~EOF
-    Groups specs into shards, ensuring that each shard has a similar number of total
-    examples, and runs the specified shard.
+    Groups specs into shards, ensuring that each shard has a similar size, and runs the
+    specified shard.
 
-    Usage: bundle exec rspec-sharder --total-shards <num> --shard-num <num> -- [rspec-args...]
+    Shard size is determined by summing the recorded durations for each spec file in the
+    shard. Durations are recorded in .spec_durations.txt. If a spec file is not found in
+    .spec_durations.txt, the duration is estimated based on the number of examples in the
+    spec file.
+
+    .spec_durations.txt should be generated before first use and updated any time shards
+    become uneven. You can do this with the following command:
+
+      bundle exec rspec-sharder --record -- [<rspec-args...>]
+
+    Usage: bundle exec rspec-sharder [--total-shards <num> [--shard-num <num>]] -- [<rspec-args...>]
 
     Options:
   EOF
@@ -25,7 +39,7 @@ end
     exit
   end
 
-  opts.on('-t', '--total-shards <num>', 'Required. The total number of shards') do |total_shards|
+  opts.on('-t', '--total-shards <num>', 'Optional. The total number of shards. Defaults to 1.') do |total_shards|
     begin
       @total_shards = Integer(total_shards)
     rescue ArgumentError
@@ -33,12 +47,16 @@ end
     end
   end
 
-  opts.on('-n', '--shard-num <num>', 'Required. The shard to run.') do |shard_num|
+  opts.on('-n', '--shard-num <num>', 'Optional. The shard to run. Defaults to 1.') do |shard_num|
     begin
       @shard_num = Integer(shard_num)
     rescue ArgumentError
       fail('fatal: invalid value for --shard-num')
     end
+  end
+
+  opts.on('-r', '--record', 'Optional. Generate .spec_durations.txt.') do
+    @record = true
   end
 end
 
@@ -48,10 +66,8 @@ rescue StandardError => e
   fail("fatal: #{e.message}")
 end
 
-fail('fatal: you must specify --total-shards') unless @total_shards
 fail('fatal: invalid value for --total-shards') unless @total_shards > 0
-fail('fatal: you must specify --shard-num') unless @shard_num
 fail('fatal: invalid value for --shard-num') unless @shard_num > 0
 fail('fatal: --shard-num may not be greater than --total-shards') unless @shard_num <= @total_shards
 
-RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard_num, rspec_args: ARGV)
+RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard_num, record: @record, rspec_args: ARGV)
