@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'rspec-sharder'
+
+def fail(message)
+  warn message
+  puts
+  puts @parser.help
+  exit 1
+end
+
+@parser = OptionParser.new do |opts|
+  opts.banner = <<~EOF
+    Groups specs into shards, ensuring that each shard has a similar number of total
+    examples, and runs the specified shard.
+
+    Usage: bundle exec rspec-sharder --total-shards <num> --shard-num <num> -- [rspec-args...]
+
+    Options:
+  EOF
+
+  opts.on('-h', '--help', "Print this message.") do
+    puts opts
+    exit
+  end
+
+  opts.on('-t', '--total-shards <num>', 'Required. The total number of shards') do |total_shards|
+    begin
+      @total_shards = Integer(total_shards)
+    rescue ArgumentError
+      fail('fatal: invalid value for --total-shards')
+    end
+  end
+
+  opts.on('-n', '--shard-num <num>', 'Required. The shard to run.') do |shard_num|
+    begin
+      @shard_num = Integer(shard_num)
+    rescue ArgumentError
+      fail('fatal: invalid value for --shard-num')
+    end
+  end
+end
+
+begin
+  @parser.parse!
+rescue StandardError => e
+  fail("fatal: #{e.message}")
+end
+
+fail('fatal: you must specify --total-shards') unless @total_shards
+fail('fatal: invalid value for --total-shards') unless @total_shards > 0
+fail('fatal: you must specify --shard-num') unless @shard_num
+fail('fatal: invalid value for --shard-num') unless @shard_num > 0
+fail('fatal: --shard-num may not be greater than --total-shards') unless @shard_num <= @total_shards
+
+RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard_num, rspec_args: ARGV)
