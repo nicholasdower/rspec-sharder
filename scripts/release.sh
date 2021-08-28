@@ -23,4 +23,5 @@ gem build
 gem push rspec-sharder-$NEW_VERSION.gem
 bundle install
 git commit -a -m "v$NEW_VERSION Release"
+git push
 open "https://github.com/nicholasdower/rspec-sharder/releases/new?title=v$NEW_VERSION%20Release&tag=v$NEW_VERSION&target=$(git rev-parse HEAD)"
