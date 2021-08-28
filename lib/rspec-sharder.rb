@@ -74,9 +74,16 @@ module RSpec
       end
 
       # Write results to .examples file.
-      persist_example_statuses
+      unless ::RSpec.configuration.dry_run
+        persist_example_statuses(shard_file_paths)
+      end
 
-      if exit_code == 0
+      if exit_code == 0 && ::RSpec.configuration.dry_run
+        ::RSpec.configuration.output_stream.puts <<~EOF
+          
+          Dry run. Not saving to .spec_durations.
+        EOF
+      elsif exit_code == 0
         # Print recorded durations.
         ::RSpec.configuration.output_stream.puts <<~EOF
           
@@ -180,11 +187,13 @@ module RSpec
       shards
     end
 
-    def self.persist_example_statuses
-      return if ::RSpec.configuration.dry_run
+    def self.persist_example_statuses(file_paths)
       return unless (path = ::RSpec.configuration.example_status_persistence_file_path)
 
-      ::RSpec::Core::ExampleStatusPersister.persist(::RSpec.world.all_examples, path)
+      examples = ::RSpec.world.all_examples.select do |example|
+        file_paths.include?(example.metadata[:file_path])
+      end
+      ::RSpec::Core::ExampleStatusPersister.persist(examples, path)
     rescue SystemCallError => e
       ::RSpec.configuration.error_stream.puts "warning: failed to write results to #{path}"
     end
