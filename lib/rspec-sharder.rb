@@ -5,7 +5,7 @@ module RSpec
 
     class ShardError < StandardError; end
 
-    def self.run(total_shards:, shard_num:, rspec_args:)
+    def self.run(total_shards:, shard_num:, persist:, rspec_args:)
       raise "fatal: invalid total shards: #{total_shards}" unless total_shards.is_a?(Integer) && total_shards > 0
       raise "fatal: invalid shard number: #{shard_num}" unless shard_num.is_a?(Integer) && shard_num > 0 && shard_num <= total_shards
 
@@ -78,39 +78,51 @@ module RSpec
         persist_example_statuses(shard_file_paths)
       end
 
-      if exit_code == 0 && ::RSpec.configuration.dry_run
-        ::RSpec.configuration.output_stream.puts <<~EOF
-          
-          Dry run. Not saving to .spec_durations.
-        EOF
-      elsif exit_code == 0
-        # Print recorded durations.
-        ::RSpec.configuration.output_stream.puts <<~EOF
-          
-          RSpec succeeded. Saving to .spec_durations:
-        EOF
-        new_durations.sort_by { |file_path, duration| file_path }.each do |file_path, duration|
-          ::RSpec.configuration.output_stream.puts "#{file_path},#{duration}"
+      if ::RSpec.configuration.dry_run
+        if persist
+          ::RSpec.configuration.output_stream.puts <<~EOF
+            
+            Dry run. Not saving to .spec_durations.
+          EOF
         end
-
-        # Write all durations with updates to .spec_durations and print summary.
-        new_durations.each do |file_path, duration|
-          all_durations[file_path] = duration
-        end
-
-        ::RSpec.configuration.output_stream.puts <<~EOF
-          
-          Expected total duration: #{pretty_duration(expected_total_duration)}
-          Actual total duration:   #{pretty_duration(actual_total_duration)}
-          Diff:                    #{pretty_duration((actual_total_duration - expected_total_duration).abs)}
-        EOF
-
-        persist_durations(all_durations)
       else
-        ::RSpec.configuration.output_stream.puts <<~EOF
-          
-          RSpec failed. Not saving to .spec_durations.
-        EOF
+        if exit_code == 0
+          # Print recorded durations and summary.
+          ::RSpec.configuration.output_stream.puts <<~EOF
+            
+            Durations:
+          EOF
+
+          new_durations.sort_by { |file_path, duration| file_path }.each do |file_path, duration|
+            ::RSpec.configuration.output_stream.puts "#{file_path},#{duration}"
+          end
+
+          ::RSpec.configuration.output_stream.puts <<~EOF
+            
+            Expected total duration: #{pretty_duration(expected_total_duration)}
+            Actual total duration:   #{pretty_duration(actual_total_duration)}
+            Diff:                    #{pretty_duration((actual_total_duration - expected_total_duration).abs)}
+          EOF
+
+          if persist
+            # Write all durations with updates to .spec_durations.
+            ::RSpec.configuration.output_stream.puts <<~EOF
+
+              Saving to .spec_durations.
+            EOF
+
+            new_durations.each do |file_path, duration|
+              all_durations[file_path] = duration
+            end
+
+            persist_durations(all_durations)
+          end
+        elsif persist
+          ::RSpec.configuration.output_stream.puts <<~EOF
+            
+            RSpec failed. Not saving to .spec_durations.
+          EOF
+        end
       end
 
       exit exit_code
@@ -183,6 +195,8 @@ module RSpec
         shards[0][:file_paths] << file_path
         shards[0][:duration] += duration
       end
+
+      shards.each { |shard| shard[:file_paths].sort! }
 
       shards
     end
