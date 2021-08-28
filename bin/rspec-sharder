@@ -15,21 +15,21 @@ end
 
 @parser = OptionParser.new do |opts|
   opts.banner = <<~EOF
-    Groups specs into shards, ensuring that each shard has a similar size, and runs the
-    specified shard.
+    Groups specs into shards, ensuring that each shard has a similar size, and runs
+    the specified shard.
 
-    Shard size is determined by summing the recorded durations for each spec file in the
-    shard. Durations are found in .spec_durations.txt. If a spec file is not found in
-    .spec_durations.txt, the duration is estimated based on the number of examples in the
-    spec file.
+    Shard size is determined by summing the recorded durations for each spec file in
+    the shard. Durations are stored in .spec_durations. If a spec file is not found
+    in .spec_durations, the duration is estimated based on the number of examples in
+    the spec file.
 
-    .spec_durations.txt is generate/updated on each run, but only for the shard which was
-    actually executed. To generate durations for all shards simultaneously, run this
-    with the default options (1 shard total):
+    .spec_durations is generate/updated on each run, but only for the shard which
+    was actually executed. To generate durations for all shards simultaneously, run
+    this command with the default options of 1 total shards:
 
     bundle exec rspec-sharder -- [<rspec-args...>]
 
-    Usage: bundle exec rspec-sharder [--total-shards <num> [--shard-num <num>]] -- [<rspec-args...>]
+    Usage: bundle exec rspec-sharder [--total-shards <num> [--shard <num>]] -- [<rspec-args...>]
 
     Options:
   EOF
@@ -39,7 +39,7 @@ end
     exit
   end
 
-  opts.on('-t', '--total-shards <num>', 'Optional. The total number of shards. Defaults to 1.') do |total_shards|
+  opts.on('-t', '--total-shards <num>', 'The total number of shards. Defaults to 1.') do |total_shards|
     begin
       @total_shards = Integer(total_shards)
     rescue ArgumentError
@@ -47,11 +47,11 @@ end
     end
   end
 
-  opts.on('-n', '--shard-num <num>', 'Optional. The shard to run. Defaults to 1.') do |shard_num|
+  opts.on('-s', '--shard <num>', 'The shard to run. Defaults to 1.') do |shard|
     begin
-      @shard_num = Integer(shard_num)
+      @shard = Integer(shard)
     rescue ArgumentError
-      fail('fatal: invalid value for --shard-num')
+      fail('fatal: invalid value for --shard')
     end
   end
 end
@@ -63,7 +63,7 @@ rescue StandardError => e
 end
 
 fail('fatal: invalid value for --total-shards') unless @total_shards > 0
-fail('fatal: invalid value for --shard-num') unless @shard_num > 0
-fail('fatal: --shard-num may not be greater than --total-shards') unless @shard_num <= @total_shards
+fail('fatal: invalid value for --shard') unless @shard > 0
+fail('fatal: --shard may not be greater than --total-shards') unless @shard <= @total_shards
 
-RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard_num, rspec_args: ARGV)
+RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard, rspec_args: ARGV)
