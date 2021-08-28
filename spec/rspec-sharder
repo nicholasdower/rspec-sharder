@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+require 'rspec-sharder'
+require 'rspec/core'
+require 'time'
+
+class Time
+  @start = Time.parse('1982-08-05 07:21:00 -0500')
+
+  def self.now
+   @start
+ end
+end
+
+module RSpec::Core
+ class Time
+   def self.now
+     ::Time.now
+   end
+ end
+end
+
+module RSpec
+  module Sharder
+    def self.run_example_group(example_group, reporter)
+      result = example_group.run(reporter)
+
+      duration = example_group.metadata[:duration]
+      raise "No duration set for #{example_group}" unless duration
+
+      [result, duration]
+    end
+  end
+end
+
+require 'rspec-sharder/command'

@@ -50,12 +50,9 @@ module RSpec
           end
 
           group_results = example_groups.map do |example_group|
-            start_time = current_time_millis
-            result = example_group.run(reporter)
-            end_time = current_time_millis
+            result, duration = run_example_group(example_group, reporter)
 
             file_path = example_group.metadata[:file_path]
-            duration = (end_time - start_time).to_i
             actual_total_duration += duration
             new_durations[file_path] ||= 0
             new_durations[file_path] += duration
@@ -88,10 +85,7 @@ module RSpec
       else
         if exit_code == 0
           # Print recorded durations and summary.
-          ::RSpec.configuration.output_stream.puts <<~EOF
-            
-            Durations:
-          EOF
+          ::RSpec.configuration.output_stream.puts 'Durations'
 
           new_durations.sort_by { |file_path, duration| file_path }.each do |file_path, duration|
             ::RSpec.configuration.output_stream.puts "#{file_path},#{duration}"
@@ -177,7 +171,7 @@ module RSpec
         if durations[file_path]
           files[file_path] = durations[file_path]
         else
-          ::RSpec.configuration.error_stream.puts "warning: recorded duration not found for #{file_path}"
+          ::RSpec.configuration.output_stream.puts "warning: recorded duration not found for #{file_path}"
 
           # Assume 1000 milliseconds per example.
           files[file_path] += ::RSpec.world.example_count([example_group]) * 1000
@@ -209,7 +203,7 @@ module RSpec
       end
       ::RSpec::Core::ExampleStatusPersister.persist(examples, path)
     rescue SystemCallError => e
-      ::RSpec.configuration.error_stream.puts "warning: failed to write results to #{path}"
+      ::RSpec.configuration.output_stream.puts "warning: failed to write results to #{path}"
     end
 
     def self.pretty_duration(duration_millis)
@@ -236,7 +230,7 @@ module RSpec
         shard[:file_paths].each do |file_path|
           ::RSpec.configuration.output_stream.puts file_path
         end
-        ::RSpec.configuration.output_stream.puts
+        ::RSpec.configuration.output_stream.puts unless i == shards.size - 1
       end
     end
 
@@ -254,6 +248,12 @@ module RSpec
 
     def self.current_time_millis
       (Process.clock_gettime(Process::CLOCK_MONOTONIC) * 1000).to_i
+    end
+
+    def self.run_example_group(example_group, reporter)
+      start_time = current_time_millis
+      result = example_group.run(reporter)
+      [result, (current_time_millis - start_time).to_i]
     end
   end
 end
