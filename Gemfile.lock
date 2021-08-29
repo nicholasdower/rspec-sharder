@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rspec-sharder (0.0.3)
+    rspec-sharder (0.0.4)
       rspec-core
 
 GEM
