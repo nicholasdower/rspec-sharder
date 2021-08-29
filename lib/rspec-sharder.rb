@@ -143,7 +143,7 @@ module RSpec
             end
 
             unless File.exist?(file_path)
-              missing_file += 1
+              missing_files += 1
             end
 
             begin
@@ -157,7 +157,10 @@ module RSpec
         end.compact
 
         if missing_files > 0
-          ::RSpec.configuration.output_stream.puts "warning: #{missing_files} file(s) in .rspec-sharder-durations not found, consider regenerating"
+          ::RSpec.configuration.output_stream.puts <<~EOF
+            warning: #{missing_files} file(s) in .rspec-sharder-durations do not exist, consider regenerating
+
+          EOF
         end
       end
 
@@ -167,20 +170,24 @@ module RSpec
     def self.build_shards(total_shards, shard_num, durations)
       files = { }
 
+      missing_files = 0
       ::RSpec.world.ordered_example_groups.each do |example_group|
         file_path = example_group.metadata[:file_path]
         files[file_path] ||= 0
         if durations[file_path]
           files[file_path] = durations[file_path]
         else
-          ::RSpec.configuration.output_stream.puts <<~EOF
-            warning: recorded duration not found for #{file_path}
-
-          EOF
-
+          missing_files += 1
           # Assume 1000 milliseconds per example.
           files[file_path] += ::RSpec.world.example_count([example_group]) * 1000
         end
+      end
+
+      if missing_files > 0
+        ::RSpec.configuration.output_stream.puts <<~EOF
+          warning: #{missing_files} file(s) in not found in .rspec-sharder-durations, consider regenerating
+
+        EOF
       end
 
       shards = (1..total_shards).map { { duration: 0, file_paths: [] } }

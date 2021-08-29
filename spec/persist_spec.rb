@@ -19,7 +19,7 @@ describe 'persist' do
   context 'when no durations file exists' do
     let(:expected_output) do
       <<~EOF
-        warning: recorded duration not found for ./test_specs/example_spec.rb
+        warning: 1 file(s) in not found in .rspec-sharder-durations, consider regenerating
 
         Shard 1 (Files: 1, Duration: 1 second):
         ./test_specs/example_spec.rb
