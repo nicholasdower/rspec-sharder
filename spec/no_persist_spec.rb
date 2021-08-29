@@ -14,7 +14,7 @@ describe '--no-persist' do
     )
   end
 
-  subject { bundle_exec('test-rspec-sharder --no-persist -- --format documentation test_specs') }
+  subject { bundle_exec('test-rspec-sharder --no-persist -- --format documentation test_specs 2>&1') }
 
   context 'when no durations file exists' do
     let(:expected_output) do
