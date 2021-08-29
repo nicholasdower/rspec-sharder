@@ -173,7 +173,10 @@ module RSpec
         if durations[file_path]
           files[file_path] = durations[file_path]
         else
-          ::RSpec.configuration.output_stream.puts "warning: recorded duration not found for #{file_path}"
+          ::RSpec.configuration.output_stream.puts <<~EOF
+            warning: recorded duration not found for #{file_path}
+
+          EOF
 
           # Assume 1000 milliseconds per example.
           files[file_path] += ::RSpec.world.example_count([example_group]) * 1000
@@ -224,7 +227,6 @@ module RSpec
     end
 
     def self.print_shards(shards)
-      ::RSpec.configuration.output_stream.puts
       shards.each_with_index do |shard, i|
         ::RSpec.configuration.output_stream.puts(
           "Shard #{i + 1} (Files: #{shard[:file_paths].size}, Duration: #{pretty_duration(shard[:duration])}):"
