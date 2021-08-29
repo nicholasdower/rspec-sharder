@@ -27,7 +27,7 @@ module RSpec
         shards = build_shards(total_shards, shard_num, all_durations)
       rescue ShardError => e
         ::RSpec.configuration.error_stream.puts e.message
-        exit ::RSpec.configuration.failure_exit_cod
+        return ::RSpec.configuration.reporter.exit_early(::RSpec.configuration.failure_exit_code)
       end
 
       print_shards(shards)
@@ -115,7 +115,7 @@ module RSpec
         end
       end
 
-      exit exit_code
+      exit_code
     end
 
     private
