@@ -20,6 +20,8 @@ describe 'rspec-sharder' do
       Expected total duration: 1 second
       Actual total duration:   5 seconds
       Diff:                    4 seconds
+
+      Saving to .rspec-sharder-durations.
     EOF
 
     expect(actual).to eq(expected)
