@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'rspec-sharder'
+require 'rspec-sharder/runner'
 require 'rspec/core'
 require 'time'
 
@@ -22,13 +22,15 @@ end
 
 module RSpec
   module Sharder
-    def self.run_example_group(example_group, reporter)
-      result = example_group.run(reporter)
+    module Runner
+      def self.run_example_group(example_group, reporter)
+        result = example_group.run(reporter)
 
-      duration = example_group.metadata[:duration]
-      raise "No duration set for #{example_group}" unless duration
+        duration = example_group.metadata[:duration]
+        raise "No duration set for #{example_group}" unless duration
 
-      [result, duration]
+        [result, duration]
+      end
     end
   end
 end

@@ -1,5 +1,5 @@
 require 'optparse'
-require 'rspec-sharder'
+require 'rspec-sharder/runner'
 
 def fail(message)
   warn message
@@ -83,4 +83,4 @@ fail('fatal: invalid value for --total-shards') unless @total_shards > 0
 fail('fatal: invalid value for --shard') unless @shard > 0
 fail('fatal: --shard may not be greater than --total-shards') unless @shard <= @total_shards
 
-exit RSpec::Sharder.run(total_shards: @total_shards, shard_num: @shard, persist: @persist, rspec_args: ARGV)
+exit RSpec::Sharder::Runner.run(total_shards: @total_shards, shard_num: @shard, persist: @persist, rspec_args: ARGV)
